@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{8EC8BBC9-AEC8-4E97-AB4B-8E7D92F24BDA}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NetTask</RootNamespace>
+    <AssemblyName>NetTask</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <StartupObject>NetTask.Program</StartupObject>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NetTask.Design\NetTask.snk</AssemblyOriginatorKeyFile>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <SccProjectName>"%24/BizCounter/NetTaskV2", BDABAAAA</SccProjectName>
+    <SccLocalPath>..</SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>MSSCCI:Microsoft Visual SourceSafe</SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <PublishUrl>发布\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;TEST</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\NetTask.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AcceptExtensionAttribute.cs" />
+    <Compile Include="APIExportAttribute.cs" />
+    <Compile Include="ContractConfigAttribute.cs" />
+    <Compile Include="Core\ArgumentExchange.cs" />
+    <Compile Include="Core\CircleContainerTask.cs" />
+    <Compile Include="Core\ClrDataStorage.cs" />
+    <Compile Include="Core\ConditionalConfig.cs" />
+    <Compile Include="Core\ConfigItem.cs" />
+    <Compile Include="Core\ContextArgument.cs" />
+    <Compile Include="Core\ExecuteResult.cs" />
+    <Compile Include="Core\Extension.cs" />
+    <Compile Include="Core\InvalidContextDataException.cs" />
+    <Compile Include="Core\IpcContract.cs" />
+    <Compile Include="Core\KnownTaskConfig.cs" />
+    <Compile Include="Core\NetTaskScope.cs" />
+    <Compile Include="Core\ScopeItemCompare.cs" />
+    <Compile Include="Core\ScopeItemCond.cs" />
+    <Compile Include="Core\ScopeItemMatch.cs" />
+    <Compile Include="Core\ScopePath.cs" />
+    <Compile Include="Core\StepAction.cs" />
+    <Compile Include="Core\StepArgument.cs" />
+    <Compile Include="Core\StepStatus.cs" />
+    <Compile Include="Core\TaskConfig.cs" />
+    <Compile Include="Core\TaskContainer.cs" />
+    <Compile Include="Core\TypeCache.cs" />
+    <Compile Include="Core\XmlDefineTask.cs" />
+    <Compile Include="Data\DataReaderReceiver.cs" />
+    <Compile Include="Data\DataReceiver.cs" />
+    <Compile Include="Data\RequriedConfigItem.cs" />
+    <Compile Include="IBranchTask.cs" />
+    <Compile Include="ICircleTask.cs" />
+    <Compile Include="IDataReceiver.cs" />
+    <Compile Include="INetTask.cs" />
+    <Compile Include="ISequentialTask.cs" />
+    <Compile Include="ITaskContainer.cs" />
+    <Compile Include="IXmlFileBasedTask.cs" />
+    <Compile Include="Main.cs" />
+    <Compile Include="SerializeEx.cs" />
+    <Compile Include="TaskImplement\ArgumentMappingTask.cs" />
+    <Compile Include="TaskImplement\ExecWithTimeoutTask.cs" />
+    <Compile Include="TaskImplement\HttpDownloadTask.cs" />
+    <Compile Include="TaskImplement\KeywordParseTask.cs" />
+    <Compile Include="TaskImplement\ScopeDumpTask.cs" />
+    <Compile Include="TaskImplement\ScopeSetTask.cs" />
+    <Compile Include="TaskImplement\SqlNetTask.cs" />
+    <Compile Include="Data\ClrDataConvert.cs" />
+    <Compile Include="Data\SqlDbType.cs" />
+    <Compile Include="Data\SqlParameter.cs" />
+    <Compile Include="Data\SqlQueryType.cs" />
+    <Compile Include="Data\SqlResultType.cs" />
+    <Compile Include="Data\SqlScript.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TaskImplement\ThreadSleepTask.cs" />
+    <Compile Include="TaskImplement\UrlMappingTask.cs" />
+    <Compile Include="TaskImplement\UrlParseTask.cs" />
+    <Compile Include="TestSamples\CircleTaskTest.cs" />
+    <Compile Include="TestSamples\LogCounterSamples.cs" />
+    <Compile Include="Design\TextBoxModeAttribute.cs" />
+    <Compile Include="TestSamples\UnitTest.cs" />
+    <Compile Include="Util\HttpClient.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\NetTask.Design\NetTask.snk">
+      <Link>NetTask.snk</Link>
+    </None>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="app.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="bin\Debug\" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

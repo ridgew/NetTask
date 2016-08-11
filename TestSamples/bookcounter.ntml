@@ -1,0 +1,269 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<cct ImplementMode="Instance" BeCircleMode="DoWhile">
+  <!-- 持续运行条件 执行状态 != 100% -->
+  <ConditionalConfig Executable="True">
+    <ScopeItemCompareOfString Logic="None" Key="CounterPercent" Mode="NotEqual" Value="100%"
+                              type="NetTask.Core.ScopeItemCompare&lt;string&gt;, NetTask.Interface" />
+  </ConditionalConfig>
+
+  <!-- 设置运行参数 -->
+  <ScopeSetTask Disabled="false" type="NetTask.TaskImplement.ScopeSetTask, NetTask.TaskImplement">
+    <Config>
+      <ArgumentConfig>
+        <arg Name="LogCounter" Type="long" Value="0" Optional="false" LastResult="false" ExchangeFlag="AutoApply" DelayClear="true" />
+        <arg Name="CounterPercent" Type="string" Value="0%" Optional="false" ExchangeFlag="AutoApply" DelayClear="true" />
+      </ArgumentConfig>
+    </Config>
+  </ScopeSetTask>
+
+
+  <!-- 主要运行任务 -->
+  <SqlNetTask type="NetTask.TaskImplement.SqlNetTask, NetTask.TaskImplement" InnerKeyOrConnectionString="DefaultDB" DbType="SQL2005">
+    <ExecSql>
+      <sql Disabled="false" QueryType="Select" ResultType="DataReader">
+        <Text>
+          <![CDATA[ declare @lastID bigint
+          select @lastID=Convert(bigint, (select top 1 分析标识 from [统计标记]
+          where 任务标识 = 'SourceLogReader' + Convert(varchar(10), @业务编号)))
+
+          SELECT TOP 2 PV.[ID], 'N/A' as UCate, PV.[SOFTWARE_ID], PV.[SERVICE_ID], U.Device_ID, MB.M_Name, U.MSID,
+          PV.[VISIT_TIME], U.First_Visit_Time, PV.[KEY_URL],PV.[REAL_URL]
+          FROM [LOG_PV] PV
+          left join [SOFTWARE] U on U.SoftWare_ID=PV.SoftWare_ID
+          inner join [GwsoftEase].[dbo].[GW_Device_Mobile] MB on MB.M_ID = U.Device_ID
+          where PV.[SERVICE_ID]=@业务编号 and PV.id > @lastID order by PV.ID asc]]>
+        </Text>
+        <SqlParams>
+          <param Direction="Input" Name="业务编号" Value="12" DataType="Int64" />
+        </SqlParams>
+      </sql>
+    </ExecSql>
+
+    <Receiver ImplementMode="Instance">
+      <!-- 单条数据接收(DataReader) -->
+      <DataReaderReceiver type="NetTask.Data.DataReaderReceiver, NetTask.TaskImplement">
+        <Storage Direction="Context">
+          <Config>
+            <ArgumentConfig />
+            <Items>
+              <ConfigItem Key="SplitStorage" Value="true" RefType="Dictionary&lt;string,object&gt;; NameValueCollection" />
+              <ConfigItem Key="StorageKeys" Value="ID,SERVICE_ID,VISIT_TIME,UCate,M_Name,SOFTWARE_ID,MSID,REAL_URL" RefType="日志编号,业务编号,访问时间,用户分类,手机型号" />
+            </Items>
+          </Config>
+        </Storage>
+      </DataReaderReceiver>
+
+      <!-- 解析访问地址 -->
+      <UrlParseTask type="NetTask.TaskImplement.UrlParseTask, NetTask.TaskImplement">
+        <Config>
+          <ArgumentConfig>
+            <arg Name="NetTask.TaskImplement.UrlParseTask::URL" ContextName="REAL_URL" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="true" />
+          </ArgumentConfig>
+          <Items>
+            <ConfigItem Key="ResultItems" Value="栏目|书籍|下载|订购|搜索" />
+            <ConfigItem Key="Pattern_栏目" Value="{1}:/booklist\.aspx\?t=([^&amp;]+)" />
+            <ConfigItem Key="Pattern_书籍" Value="{1}:[?&amp;]dtd=(\d+)" />
+            <ConfigItem Key="Pattern_下载" Value="{1}:/bookdown\.aspx\?dtd=(\d+)" />
+            <ConfigItem Key="Pattern_订购" Value="{1}:/Fee/success\.aspx\?resid=([^&amp;]+)" />
+            <ConfigItem Key="Pattern_搜索" Value="&amp;keyword=([^&amp;]+)" />
+          </Items>
+        </Config>
+      </UrlParseTask>
+
+      <!-- 写入分析基本结果 -->
+      <SqlNetTask type="NetTask.TaskImplement.SqlNetTask, NetTask.TaskImplement" InnerKeyOrConnectionString="DefaultDB" DbType="SQL2005">
+        <Config>
+          <ArgumentConfig>
+            <arg Name="日志编号" Type="long" ExchangeFlag="AutoApply" DelayClear="true" />
+            <arg Name="业务编号" Type="long" ExchangeFlag="Duplex" DelayClear="true" />
+            <arg Name="访问时间" Type="long" ExchangeFlag="Duplex" DelayClear="true" />
+            <arg Name="用户分类" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="true" />
+            <arg Name="手机型号" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="true" />
+            <arg Name="访问栏目" ContextName="栏目" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+            <arg Name="书籍标识" ContextName="书籍" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+            <arg Name="下载标识" ContextName="下载" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+            <arg Name="订购标识" ContextName="订购" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+            <arg Name="是否搜索" ContextName="搜索" Type="bool" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="true" />
+          </ArgumentConfig>
+          <Items />
+        </Config>
+        <ExecSql>
+          <sql Disabled="false" QueryType="Insert" ResultType="NoValue">
+            <Text>
+              insert into [访问分析]([日志编号],[业务编号],[访问时间],[用户分类], [手机型号], [访问栏目], [书籍标识], [下载标识], [订购标识], [是否搜索])
+              values(@日志编号, @业务编号, @访问时间, @用户分类, @手机型号, @访问栏目, @书籍标识, @下载标识, @订购标识, @是否搜索 )
+            </Text>
+            <SqlParams>
+              <param Name="日志编号" DataType="Int64" />
+              <param Name="业务编号" DataType="Int64" />
+              <param Name="访问时间" DataType="Int64" />
+              <param Name="用户分类" DataType="AnsiString" />
+              <param Name="手机型号" DataType="AnsiString" />
+              <param Name="访问栏目" DataType="AnsiString" />
+              <param Name="书籍标识" DataType="AnsiString" />
+              <param Name="下载标识" DataType="AnsiString" />
+              <param Name="订购标识" DataType="AnsiString" />
+              <param Name="是否搜索" DataType="Boolean" />
+            </SqlParams>
+          </sql>
+        </ExecSql>
+      </SqlNetTask>
+
+      <!-- 条件运行的关键字搜索 -->
+      <TaskContainer type="NetTask.Core.TaskContainer, NetTask.Interface" ImplementMode="Instance">
+        <ConditionalConfig Executable="True">
+          <ScopeItemCond type="NetTask.Core.ScopeItemCond, NetTask.Interface" Logic="None" Key="搜索" />
+        </ConditionalConfig>
+        <KeywordParseTask type="NetTask.TaskImplement.KeywordParseTask, NetTask.TaskImplement">
+          <Config>
+            <ArgumentConfig>
+              <arg Name="RawURL" ContextName="REAL_URL" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+            </ArgumentConfig>
+            <Items>
+              <ConfigItem Key="KeywordPattern" Value="&amp;keyword=([^&amp;]+)" RefType="string" />
+              <ConfigItem Key="Adapter" Value="SimpleKeywordHandler" RefType="NetTask.TaskImplement.KeywordParseTask, NetTask.TaskImplement" />
+            </Items>
+          </Config>
+        </KeywordParseTask>
+
+        <!-- 写入关键字统计日志 -->
+        <SqlNetTask type="NetTask.TaskImplement.SqlNetTask, NetTask.TaskImplement" InnerKeyOrConnectionString="DefaultDB" DbType="SQL2005">
+          <Config>
+            <ArgumentConfig>
+              <arg Name="日志编号" Type="long" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="true" />
+              <arg Name="业务编号" Type="long" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="true" />
+              <arg Name="用户标识" ContextName="SOFTWARE_ID" Type="long" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+              <arg Name="搜索时间" ContextName="访问时间" Type="long" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+              <arg Name="用户分类" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+              <arg Name="手机型号" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+              <arg Name="手机号码" ContextName="MSID" Type="string" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="false" />
+              <arg Name="关键字" Type="string" Optional="false" LastResult="true" ExchangeFlag="Duplex" DelayClear="false" />
+            </ArgumentConfig>
+          </Config>
+          <ExecSql>
+            <sql Disabled="false" QueryType="Insert" ResultType="NoValue">
+              <Text>
+                insert into [搜索统计]([日志编号],[业务编号],[用户标识],[搜索时间],[用户分类],[手机型号],[手机号码],[关键字])
+                values(@日志编号,@业务编号,@用户标识,@搜索时间,@用户分类,@手机型号,@手机号码,@关键字)
+				exec [GwsoftEase]..sp_StatAnalys @日志编号
+              </Text>
+              <SqlParams>
+                <param Name="日志编号" DataType="Int64" />
+                <param Name="业务编号" DataType="Int64" />
+                <param Name="用户标识" DataType="Int64" />
+                <param Name="搜索时间" DataType="Int64" />
+                <param Name="用户分类" DataType="AnsiString" />
+                <param Name="手机型号" DataType="AnsiString" />
+                <param Name="手机号码" DataType="AnsiString" />
+                <param Name="关键字" DataType="AnsiString" />
+              </SqlParams>
+            </sql>
+          </ExecSql>
+        </SqlNetTask>
+
+      </TaskContainer>
+
+      <!-- 条件运行的进度保存 -->
+      <TaskContainer type="NetTask.Core.TaskContainer, NetTask.Interface" ImplementMode="Instance">
+        <ConditionalConfig Executable="True">
+          <ScopeItemMatchOfInt32 Key="LogCounter" Operation="Add" Mode="NotEqual" DesiredValue="2147483647" RightValue="1" Logic="None" RefreshScope="true" type="NetTask.Core.ScopeItemMatch&lt;int&gt;, NetTask.Interface" />
+          <ScopeItemMatchOfInt32 Key="LogCounter" Operation="Mod" Mode="Equal" DesiredValue="0" RightValue="10" Logic="AND" type="NetTask.Core.ScopeItemMatch&lt;int&gt;, NetTask.Interface" />
+        </ConditionalConfig>
+
+        <!-- 保存分析点 -->
+        <SqlNetTask type="NetTask.TaskImplement.SqlNetTask, NetTask.TaskImplement" InnerKeyOrConnectionString="DefaultDB" DbType="SQL2005">
+          <Config>
+            <ArgumentConfig>
+              <arg Name="分析标识" ContextName="日志编号" Type="long" ExchangeFlag="AutoApply" DelayClear="true" />
+            </ArgumentConfig>
+            <Items />
+          </Config>
+          <ExecSql>
+            <sql Disabled="false" QueryType="Insert" ResultType="NoValue">
+              <Text>
+                <![CDATA[if exists(select top 1 * from [统计标记] where [任务标识] = @任务标识)
+              Update [统计标记] set  [结束时间] = getdate(), [分析标识]= @分析标识, [执行状态]='OK'
+              where [任务标识] = @任务标识
+              else
+              Insert into [统计标记]([任务标识] ,[开始时间] ,[结束时间] ,[分析标识] ,[执行状态])
+              values(@任务标识, getdate(), getdate(), @分析标识, 'OK')]]>
+              </Text>
+              <SqlParams>
+                <param Name="任务标识" Value="SourceLogReader12" DataType="AnsiString" />
+                <param Name="分析标识" DataType="AnsiString" />
+              </SqlParams>
+            </sql>
+          </ExecSql>
+        </SqlNetTask>
+
+        <!-- 保存进度 -->
+        <sqlr InnerKeyOrConnectionString="DefaultDB" DbType="SQL2005" TaskUrl="sqlr-saveprogress">
+          <Config>
+            <ArgumentConfig>
+              <arg Name="业务编号" Type="long" Optional="false" LastResult="false" ExchangeFlag="Duplex" DelayClear="true" />
+              <arg Name="CounterPercent" Type="string" Value="0%" Optional="false" LastResult="true" ExchangeFlag="Duplex" DelayClear="true" />
+            </ArgumentConfig>
+          </Config>
+          <ExecSql>
+            <sql Disabled="false" QueryType="Insert" ResultType="ScalarValue">
+              <Text>
+                <![CDATA[declare @total decimal, @current decimal
+              declare @分析标识 nvarchar(200), @执行状态 nvarchar(200)
+
+              select @total=(SELECT count(*) FROM [LOG_PV] where [SERVICE_ID]=@业务编号),
+              @current=(SELECT count(*) FROM [访问分析] where 业务编号=@业务编号)
+
+              select @分析标识 = Convert(varchar(20), @current) + N'/' + Convert(varchar(20), @total),
+              @执行状态 = Convert(varchar(20), Convert(decimal(6,4),@current/@total)*100) + '%'
+
+              if exists(select top 1 * from [统计标记] where [任务标识] = @任务标识)
+              Update [统计标记] set  [结束时间] = getdate(), [分析标识]= @分析标识, [执行状态]=@执行状态
+              where [任务标识] = @任务标识
+              else
+              Insert into [统计标记]([任务标识] ,[开始时间] ,[结束时间] ,[分析标识] ,[执行状态])
+              values(@任务标识, getdate(), getdate(), @分析标识, @执行状态)
+              
+              select @执行状态 as LastResult
+              ]]>
+              </Text>
+              <SqlParams>
+                <param Name="任务标识" Value="SP-12" DataType="AnsiString" />
+                <param Name="业务编号" DataType="Int64" />
+              </SqlParams>
+            </sql>
+          </ExecSql>
+        </sqlr>
+
+      </TaskContainer>
+
+    </Receiver>
+  </SqlNetTask>
+
+  <!-- 调试运行域参数的值 -->
+  <dump Disabled="false">
+    <Config>
+      <Items>
+        <ConfigItem Key="Adapter" Value="Console" />
+      </Items>
+    </Config>
+  </dump>
+
+  <!-- 
+    还原日志分析计数（清零） 
+        当 LogCounter = ? 时自动至0
+  -->
+  <ScopeSetTask Disabled="false" type="NetTask.TaskImplement.ScopeSetTask, NetTask.TaskImplement" TaskUrl="set-resetcounter">
+    <Conditional Executable="True">
+      <ScopeItemMatchOfInt32 Key="LogCounter" Operation="Add" Mode="Equal" DesiredValue="20" RightValue="0" Logic="None" type="NetTask.Core.ScopeItemMatch&lt;int&gt;, NetTask.Interface" />
+    </Conditional>
+    <Config>
+      <Items>
+        <ConfigItem Key="LogCounter" Value="0" RefType="int" />
+      </Items>
+    </Config>
+  </ScopeSetTask>
+
+  <!-- 线程等待 -->
+  <sleep WaitMilliseconds="2s" />
+
+</cct>
